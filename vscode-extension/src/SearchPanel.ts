@@ -44,7 +44,7 @@ export class SearchPanel {
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
         this._panel.webview.onDidReceiveMessage(
-            async message => {
+            async (message: any) => {
                 switch (message.type) {
                     case 'search':
                         await this._handleSearch(message.query);

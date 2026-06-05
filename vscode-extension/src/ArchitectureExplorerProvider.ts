@@ -19,7 +19,7 @@ export class ArchitectureExplorerProvider implements vscode.WebviewViewProvider 
 
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-        webviewView.webview.onDidReceiveMessage(data => {
+        webviewView.webview.onDidReceiveMessage((data: any) => {
             switch (data.type) {
                 case 'refresh':
                     {

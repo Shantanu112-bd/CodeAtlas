@@ -30,7 +30,7 @@ def setup_db():
     yield
 
 def test_add_repository_invalid_url():
-    response = client.post("/v1/repositories", json={"github_url": "invalid_url"})
+    response = client.post("/api/v1/repositories", json={"github_url": "invalid_url"})
     assert response.status_code == 422
     assert "Invalid GitHub repository URL format" in response.text
 
@@ -39,7 +39,7 @@ def test_add_repository_success(mock_sub_run):
     mock_sub_run.return_value = mock.MagicMock(returncode=0, stdout="origin/main")
 
     payload = {"github_url": "https://github.com/owner/repo"}
-    response = client.post("/v1/repositories", json=payload)
+    response = client.post("/api/v1/repositories", json=payload)
     assert response.status_code == 201
     data = response.json()
     assert data["github_url"] == "https://github.com/owner/repo"
@@ -60,16 +60,16 @@ def test_list_repositories():
     db.add(repo)
     db.commit()
 
-    response = client.get("/v1/repositories")
+    response = client.get("/api/v1/repositories")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
     assert data[0]["name"] == "repo"
 
 def test_get_repository_not_found():
-    response = client.get("/v1/repositories/00000000-0000-0000-0000-000000000000")
+    response = client.get("/api/v1/repositories/00000000-0000-0000-0000-000000000000")
     assert response.status_code == 404
 
 def test_delete_repository_not_found():
-    response = client.delete("/v1/repositories/00000000-0000-0000-0000-000000000000")
+    response = client.delete("/api/v1/repositories/00000000-0000-0000-0000-000000000000")
     assert response.status_code == 404

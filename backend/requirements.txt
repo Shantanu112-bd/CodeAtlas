@@ -17,3 +17,4 @@ openai
 qdrant-client
 markdown
 weasyprint
+email-validator
