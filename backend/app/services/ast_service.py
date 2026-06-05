@@ -65,7 +65,7 @@ class ASTService:
         valid_extensions = {'.py', '.js', '.jsx', '.ts', '.tsx'}
 
         for root, dirs, files in os.walk(repo.local_path):
-            dirs[:] = [d for d in dirs if d not in {'.git', 'node_modules', '.venv', 'venv'}]
+            dirs[:] = [d for d in dirs if d not in {'.git', 'node_modules', '.venv', 'venv', 'tests', 'docs_src', 'docs', '.github', 'htmlcov', 'build', 'dist'}]
             for file_name in files:
                 if file_name.startswith('.'):
                     continue
@@ -97,7 +97,7 @@ class ASTService:
                 for imp in result["imports"]:
                     code_imports.append(CodeImport(
                         id=imp["id"],
-                        code_file_id=imp["code_file_id"],
+                        source_file_id=imp["code_file_id"],
                         imported_module=imp["module"],
                         import_type=imp["type"],
                         line_number=imp["line"]
@@ -141,12 +141,12 @@ class ASTService:
                             break
                             
             if target_file_id:
-                file_to_imports[imp.code_file_id].append(target_file_id)
+                file_to_imports[imp.source_file_id].append(target_file_id)
                 graph_edges.append(CodeGraphEdge(
                     id=uuid.uuid4(),
                     repository_id=repository_id,
                     source_type='file',
-                    source_id=imp.code_file_id,
+                    source_id=imp.source_file_id,
                     target_type='file',
                     target_id=target_file_id,
                     edge_type='imports'

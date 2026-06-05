@@ -10,13 +10,18 @@ from ...config import settings
 
 logger = logging.getLogger("codeatlas.search.vector")
 
+from ..embedding_providers import OllamaEmbeddingProvider, OpenAIEmbeddingProvider
+import asyncio
+
 class VectorSearchService:
     def __init__(self):
-        self.collection_name = "codeatlas_nodes"
-        
-        self.openai_client = None
-        if settings.OPENAI_API_KEY:
-            self.openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        # Initialize Provider and Collection name based on settings
+        if settings.EMBEDDING_PROVIDER.lower() == "openai":
+            self.provider = OpenAIEmbeddingProvider()
+            self.collection_name = "codeatlas_nodes_openai"
+        else:
+            self.provider = OllamaEmbeddingProvider()
+            self.collection_name = "codeatlas_nodes_ollama"
             
         self.qdrant_client = None
         if settings.QDRANT_URL:
@@ -26,16 +31,10 @@ class VectorSearchService:
             )
 
     async def _get_embedding(self, text: str) -> List[float]:
-        if not self.openai_client:
-            logger.error("OpenAI client not configured for embedding generation.")
-            return []
-            
         try:
-            response = await self.openai_client.embeddings.create(
-                input=[text],
-                model="text-embedding-3-small"
-            )
-            return response.data[0].embedding
+            # Run the provider embedding in a thread pool to avoid blocking async loop
+            embeddings = await asyncio.to_thread(self.provider.embed_batch, [text])
+            return embeddings[0] if embeddings else []
         except Exception as e:
             logger.error(f"Failed to generate query embedding: {e}")
             return []

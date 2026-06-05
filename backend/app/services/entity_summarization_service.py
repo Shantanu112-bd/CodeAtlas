@@ -107,7 +107,8 @@ class EntitySummarizationService:
             # In a real pipeline, we'd batch read files. Doing it naively here.
             code_snippet = self._read_lines(repo.local_path, file_map[c.code_file_id].file_path, c.start_line, c.end_line)
             if code_snippet:
-                summary += f"\nCode:\n{code_snippet}"
+                code_snippet_short = "\n".join(code_snippet.splitlines()[:5])
+                summary += f"\nCode:\n{code_snippet_short}"
 
             summaries.append({
                 "id": str(c.id),
@@ -130,7 +131,8 @@ class EntitySummarizationService:
             
             code_snippet = self._read_lines(repo.local_path, file_map[func.code_file_id].file_path, func.start_line, func.end_line)
             if code_snippet:
-                summary += f"\nCode:\n{code_snippet}"
+                code_snippet_short = "\n".join(code_snippet.splitlines()[:5])
+                summary += f"\nCode:\n{code_snippet_short}"
 
             summaries.append({
                 "id": str(func.id),

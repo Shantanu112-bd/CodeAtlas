@@ -4,25 +4,28 @@ import logging
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 
-from openai import OpenAI
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams, PointStruct
 
 from ..config import settings
 from ..models import Repository, CodeFile, CodeClass, CodeFunction
 from .entity_summarization_service import EntitySummarizationService
+from .embedding_providers import OllamaEmbeddingProvider, OpenAIEmbeddingProvider
 
 logger = logging.getLogger("codeatlas.embedding")
 
 class EmbeddingService:
     def __init__(self, db: Session):
         self.db = db
-        self.collection_name = "codeatlas_nodes"
         
-        # Initialize OpenAI
-        self.openai_client = None
-        if settings.OPENAI_API_KEY:
-            self.openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        # Initialize Provider
+        self.provider = None
+        if settings.EMBEDDING_PROVIDER.lower() == "openai":
+            self.provider = OpenAIEmbeddingProvider()
+            self.collection_name = "codeatlas_nodes_openai"
+        else:
+            self.provider = OllamaEmbeddingProvider()
+            self.collection_name = "codeatlas_nodes_ollama"
             
         # Initialize Qdrant
         self.qdrant_client = None
@@ -42,14 +45,14 @@ class EmbeddingService:
             if not any(c.name == self.collection_name for c in collections):
                 self.qdrant_client.create_collection(
                     collection_name=self.collection_name,
-                    vectors_config=VectorParams(size=1536, distance=Distance.COSINE)
+                    vectors_config=VectorParams(size=self.provider.get_dimension(), distance=Distance.COSINE)
                 )
                 logger.info(f"Created Qdrant collection: {self.collection_name}")
         except Exception as e:
             logger.error(f"Failed to ensure Qdrant collection: {e}")
 
     def embed_repository(self, repository_id: uuid.UUID) -> bool:
-        if not self.openai_client or not self.qdrant_client:
+        if not self.provider or not self.qdrant_client:
             logger.warning("EmbeddingService not fully configured. Skipping.")
             return False
 
@@ -67,25 +70,22 @@ class EmbeddingService:
             logger.info("No entity summaries generated to embed.")
             return True
 
-        # Batch API requests (OpenAI allows max 2048 per batch, but usually smaller is safer for token limits)
-        BATCH_SIZE = 100
+        # Batch API requests
+        BATCH_SIZE = 25
         for i in range(0, len(summaries), BATCH_SIZE):
             batch = summaries[i:i+BATCH_SIZE]
             batch_texts = [m["content"] for m in batch]
 
             try:
-                response = self.openai_client.embeddings.create(
-                    input=batch_texts,
-                    model="text-embedding-3-small"
-                )
+                embeddings = self.provider.embed_batch(batch_texts)
                 
                 points = []
-                for idx, emb in enumerate(response.data):
+                for idx, emb in enumerate(embeddings):
                     meta = batch[idx]
                     points.append(
                         PointStruct(
                             id=meta["id"],
-                            vector=emb.embedding,
+                            vector=emb,
                             payload=meta
                         )
                     )

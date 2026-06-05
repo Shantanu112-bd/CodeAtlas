@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     GITHUB_REDIRECT_URI: str = "http://localhost:8000/v1/auth/github/callback"
     REPO_STORAGE_PATH: str = "./repos"
     OPENAI_API_KEY: str = ""
+    EMBEDDING_PROVIDER: str = "ollama"
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_API_KEY: str = ""
 

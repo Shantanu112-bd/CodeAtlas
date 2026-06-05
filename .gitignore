@@ -6,3 +6,10 @@ __pycache__/
 dist/
 out/
 .DS_Store
+
+# CodeAtlas local development files
+backend/repos/
+backend/scratch/
+backend/*.db
+backend/test_parse.py
+git_stats.txt

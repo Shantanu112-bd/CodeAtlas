@@ -40,10 +40,9 @@ def mock_db():
     # We will just patch the summarization service directly instead of deep-mocking db queries
     return db, repo_id
 
-@patch("app.services.embedding_service.OpenAI")
 @patch("app.services.embedding_service.QdrantClient")
 @patch("app.services.embedding_service.EntitySummarizationService")
-def test_embed_repository_graph_aware(mock_summarizer_class, mock_qdrant, mock_openai, mock_db):
+def test_embed_repository_graph_aware(mock_summarizer_class, mock_qdrant, mock_db):
     db, repo_id = mock_db
     
     # Mock Summarizer
@@ -54,17 +53,12 @@ def test_embed_repository_graph_aware(mock_summarizer_class, mock_qdrant, mock_o
     ]
 
     service = EmbeddingService(db)
-    service.openai_client = mock_openai()
     service.qdrant_client = mock_qdrant()
 
-    # Mock OpenAI
-    mock_response = MagicMock()
-    mock_emb1 = MagicMock()
-    mock_emb1.embedding = [0.1, 0.2]
-    mock_emb2 = MagicMock()
-    mock_emb2.embedding = [0.3, 0.4]
-    mock_response.data = [mock_emb1, mock_emb2]
-    service.openai_client.embeddings.create.return_value = mock_response
+    # Mock Provider
+    mock_provider = MagicMock()
+    mock_provider.embed_batch.return_value = [[0.1, 0.2], [0.3, 0.4]]
+    service.provider = mock_provider
 
     # Execute
     result = service.embed_repository(repo_id)
@@ -72,11 +66,11 @@ def test_embed_repository_graph_aware(mock_summarizer_class, mock_qdrant, mock_o
     # Verify
     assert result is True
     
-    # Check OpenAI called with 2 rich contexts
-    create_call = service.openai_client.embeddings.create.call_args
-    assert len(create_call.kwargs['input']) == 2
-    assert create_call.kwargs['input'][0] == "Repo context"
-    assert create_call.kwargs['input'][1] == "Class context with instantiation edge"
+    # Check Provider called with 2 rich contexts
+    embed_call = service.provider.embed_batch.call_args
+    assert len(embed_call.args[0]) == 2
+    assert embed_call.args[0][0] == "Repo context"
+    assert embed_call.args[0][1] == "Class context with instantiation edge"
 
     # Check Qdrant
     upsert_call = service.qdrant_client.upsert.call_args
