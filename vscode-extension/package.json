@@ -1,0 +1,84 @@
+{
+  "name": "codeatlas",
+  "displayName": "CodeAtlas",
+  "description": "CodeAtlas Repository Intelligence Engine",
+  "version": "1.0.0",
+  "publisher": "codeatlas",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeatlas.search",
+        "title": "CodeAtlas: Search"
+      },
+      {
+        "command": "codeatlas.functionIntelligence",
+        "title": "CodeAtlas: Function Intelligence"
+      },
+      {
+        "command": "codeatlas.classIntelligence",
+        "title": "CodeAtlas: Class Intelligence"
+      },
+      {
+        "command": "codeatlas.fileIntelligence",
+        "title": "CodeAtlas: File Intelligence"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "codeatlas.functionIntelligence",
+          "group": "codeatlas@1"
+        },
+        {
+          "command": "codeatlas.classIntelligence",
+          "group": "codeatlas@2"
+        },
+        {
+          "command": "codeatlas.fileIntelligence",
+          "group": "codeatlas@3"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codeatlas-sidebar",
+          "title": "CodeAtlas",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codeatlas-sidebar": [
+        {
+          "type": "webview",
+          "id": "codeatlas.architectureExplorer",
+          "name": "Architecture Explorer"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node"
+  },
+  "devDependencies": {
+    "@types/node": "^18.x",
+    "@types/vscode": "^1.80.0",
+    "esbuild": "^0.19.0",
+    "typescript": "^5.x"
+  },
+  "dependencies": {
+    "axios": "^1.6.2"
+  }
+}
